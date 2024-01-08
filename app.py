@@ -327,12 +327,18 @@ def predict():
             all_suggestions.extend(suggestions.get('recommended_content', []))
 
         print(all_suggestions)
+        
         # Keep only the best two suggestions based on content similarity
         best_suggestions = get_most_similar_suggestions(articles['articles'], all_suggestions)
-        return jsonify({'recommended:': best_suggestions})
+        
+        # Remove double quotes from the results before creating the response
+        best_suggestions_no_quotes = [suggestion.replace('"', '') for suggestion in best_suggestions]
+        
+        return jsonify({'recommended': best_suggestions_no_quotes})
 
     except Exception as e:
         return jsonify({'error try this out': str(e)})
+
 
 
 

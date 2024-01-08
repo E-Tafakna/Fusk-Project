@@ -26,6 +26,10 @@ label_encoder = joblib.load("label_encoder.pkl")
 # Initialize TF-IDF vectorizer
 vectorizer = joblib.load("tfidf_vectorizer.pkl")
 
+import re
+import cv2
+import pytesseract
+
 def image_to_articles(img_arrays):
     articles_list = []
 
@@ -35,8 +39,9 @@ def image_to_articles(img_arrays):
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             threshold_img = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
             text = pytesseract.image_to_string(threshold_img)
-            keyword = "ARTICLE"
 
+            # Check for the presence of "ARTICLE"
+            keyword = "ARTICLE"
             article_matches = re.finditer(r'\b(?:ARTICLE|Article|article)\b', text)
             indices = [match.start() for match in article_matches]
 
@@ -47,25 +52,35 @@ def image_to_articles(img_arrays):
                 if article_content:
                     articles_list.append(article_content)
 
+            # If "ARTICLE" is not found, check for Roman numerals or the digit "1"
             if not articles_list:
-                colon_index = text.find(":")
-                if colon_index != -1:
-                    keyword = text[:colon_index].strip()
+                roman_numeral_matches = re.finditer(r'\b(?:I|II|III|IV|V|VI|VII|VIII|IX|X)\b', text)
+                indices = [match.start() for match in roman_numeral_matches]
 
-            article_matches = re.finditer(fr'\b(?:{re.escape(keyword)})\b', text, re.IGNORECASE)
-            indices = [match.start() for match in article_matches]
+                for i in range(len(indices)):
+                    start_index = indices[i]
+                    end_index = indices[i + 1] if i + 1 < len(indices) else None
+                    article_content = text[start_index:end_index].strip()
+                    if article_content:
+                        articles_list.append(article_content)
 
-            for i in range(len(indices)):
-                start_index = indices[i]
-                end_index = indices[i + 1] if i + 1 < len(indices) else None
-                article_content = text[start_index:end_index].strip()
-                if article_content:
-                    articles_list.append(article_content)
+                # If Roman numerals are not found, check for the digit "1"
+                if not articles_list:
+                    digit_one_matches = re.finditer(r'\b(?:1)\b', text)
+                    indices = [match.start() for match in digit_one_matches]
+
+                    for i in range(len(indices)):
+                        start_index = indices[i]
+                        end_index = indices[i + 1] if i + 1 < len(indices) else None
+                        article_content = text[start_index:end_index].strip()
+                        if article_content:
+                            articles_list.append(article_content)
 
         except Exception as e:
             print(f"An error occurred while processing image {idx + 1}: {e}")
 
     return {'articles': articles_list}
+
 
 
 

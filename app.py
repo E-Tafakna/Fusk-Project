@@ -52,7 +52,7 @@ def image_to_articles(img_arrays):
                 if article_content:
                     articles_list.append(article_content)
 
-            # If "ARTICLE" is not found, check for Roman numerals or the digit "1"
+            # If "ARTICLE" is not found, check for Roman numerals or the digits
             if not articles_list:
                 roman_numeral_matches = re.finditer(r'\b(?:I|II|III|IV|V|VI|VII|VIII|IX|X)\b', text)
                 indices = [match.start() for match in roman_numeral_matches]
@@ -64,10 +64,10 @@ def image_to_articles(img_arrays):
                     if article_content:
                         articles_list.append(article_content)
 
-                # If Roman numerals are not found, check for the digit "1"
+                # If Roman numerals are not found, check for any digits
                 if not articles_list:
-                    digit_one_matches = re.finditer(r'\b(?:1)\b', text)
-                    indices = [match.start() for match in digit_one_matches]
+                    digit_matches = re.finditer(r'\b(?:\d+)\b', text)
+                    indices = [match.start() for match in digit_matches]
 
                     for i in range(len(indices)):
                         start_index = indices[i]
@@ -75,6 +75,18 @@ def image_to_articles(img_arrays):
                         article_content = text[start_index:end_index].strip()
                         if article_content:
                             articles_list.append(article_content)
+
+                    # Check for the presence of alphabetic sequences like "A.", "B.", etc.
+                    if not articles_list:
+                        alpha_sequence_matches = re.finditer(r'\b(?:[A-Z]\.)\b', text)
+                        indices = [match.start() for match in alpha_sequence_matches]
+
+                        for i in range(len(indices)):
+                            start_index = indices[i]
+                            end_index = indices[i + 1] if i + 1 < len(indices) else None
+                            article_content = text[start_index:end_index].strip()
+                            if article_content:
+                                articles_list.append(article_content)
 
         except Exception as e:
             print(f"An error occurred while processing image {idx + 1}: {e}")
